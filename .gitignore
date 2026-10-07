@@ -1,0 +1,10 @@
+# Données : téléchargées automatiquement par Airflow dans s3://raw
+data/*
+!data/.gitkeep
+
+.venv*/
+.ipynb_checkpoints/
+__pycache__/
+
+# Secrets locaux (modèle : .env.example)
+.env
