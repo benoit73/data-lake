@@ -2,3 +2,5 @@
 *.toml text eol=lf
 *.yml text eol=lf
 .env* text eol=lf
+exercice-3/airflow/hop-dw text eol=lf
+Dockerfile text eol=lf

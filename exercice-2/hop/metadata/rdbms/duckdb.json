@@ -1,0 +1,26 @@
+{
+  "rdbms": {
+    "DuckDB": {
+      "databaseName": "",
+      "pluginId": "DuckDB",
+      "accessType": 0,
+      "hostname": "",
+      "password": "",
+      "pluginName": "DuckDB",
+      "port": "",
+      "attributes": {
+        "SQL_CONNECT": "INSTALL httpfs; LOAD httpfs; SET TimeZone = 'UTC'; CREATE OR REPLACE SECRET garage (TYPE s3, KEY_ID '${S3_ACCESS_KEY_ID}', SECRET '${S3_SECRET_ACCESS_KEY}', REGION '${S3_REGION}', ENDPOINT 'garage:3900', URL_STYLE 'path', USE_SSL false);",
+        "SUPPORTS_BOOLEAN_DATA_TYPE": "Y",
+        "PRESERVE_RESERVED_WORD_CASE": "Y",
+        "SUPPORTS_TIMESTAMP_DATA_TYPE": "N",
+        "QUOTE_ALL_FIELDS": "N",
+        "FORCE_IDENTIFIERS_TO_LOWERCASE": "N",
+        "FORCE_IDENTIFIERS_TO_UPPERCASE": "N",
+        "PREFERRED_SCHEMA_NAME": ""
+      },
+      "manualUrl": "",
+      "username": ""
+    }
+  },
+  "name": "duckdb"
+}

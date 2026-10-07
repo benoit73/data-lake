@@ -1,0 +1,10 @@
+{
+  "engineRunConfiguration": {
+    "Local": {
+      "safe_mode": false
+    }
+  },
+  "name": "local",
+  "description": "Exécute le workflow localement",
+  "defaultSelection": true
+}

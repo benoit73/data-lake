@@ -7,7 +7,7 @@ x-s3-env: &s3-env
   AWS_ENDPOINT_URL: http://garage:3900
 
 services:
-  # ---------- Stockage S3 ----------
+  # ---------- Data lake : stockage S3 ----------
   garage:
     image: dxflrs/garage:v2.1.0
     restart: unless-stopped
@@ -54,7 +54,26 @@ services:
     volumes:
       - ./garage/garage.toml:/etc/garage.toml:ro
 
-  # ---------- Airflow ----------
+  # ---------- Data warehouse ----------
+  # Schéma en étoile créé au premier démarrage par sql/01_dw.sql, rempli par les pipelines Hop
+  dw:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DW_USER}
+      POSTGRES_PASSWORD: ${DW_PASSWORD}
+      POSTGRES_DB: ${DW_DB}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d:ro
+      - dw-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DW_USER} -d ${DW_DB}"]
+      interval: 5s
+      retries: 10
+
+  # ---------- Airflow (avec Apache Hop pour exécuter les pipelines) ----------
   postgres:
     image: postgres:16
     restart: unless-stopped
@@ -70,12 +89,14 @@ services:
       retries: 10
 
   airflow:
-    image: apache/airflow:3.1.0
+    build: ./airflow
     restart: unless-stopped
     command: standalone
     user: "${AIRFLOW_UID}:0"
     depends_on:
       postgres:
+        condition: service_healthy
+      dw:
         condition: service_healthy
       garage-init:
         condition: service_completed_successfully
@@ -96,9 +117,37 @@ services:
          "login": "${S3_ACCESS_KEY_ID}",
          "password": "${S3_SECRET_ACCESS_KEY}",
          "extra": {"endpoint_url": "http://garage:3900", "region_name": "${S3_REGION}"}}
+      # Lus par hop-dw et passés aux connexions du projet Hop
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      S3_REGION: ${S3_REGION}
+      DW_DB: ${DW_DB}
+      DW_USER: ${DW_USER}
+      DW_PASSWORD: ${DW_PASSWORD}
     volumes:
       - ./airflow/dags:/opt/airflow/dags
+      - ../exercice-2/hop:/opt/hop-projet:ro
       - airflow-logs:/opt/airflow/logs
+
+  # ---------- Apache Hop : interface graphique (no code) ----------
+  hop-web:
+    build: ./hop-web
+    restart: unless-stopped
+    depends_on:
+      garage-init:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8090:8080"
+    environment:
+      HOP_PROJECT_NAME: dw
+      HOP_PROJECT_FOLDER: /projet
+      # Variables lues par les connexions du projet ; mémoire limitée (l'image prend tout par défaut)
+      HOP_OPTIONS: >-
+        -Xmx2g -Dorg.eclipse.rap.rwt.resourceLocation=/tmp/rwt-resources
+        -DS3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID} -DS3_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY} -DS3_REGION=${S3_REGION}
+        -DDW_DB=${DW_DB} -DDW_USER=${DW_USER} -DDW_PASSWORD=${DW_PASSWORD}
+    volumes:
+      - ../exercice-2/hop:/projet
 
   # ---------- Jupyter ----------
   jupyter:
@@ -114,10 +163,11 @@ services:
       JUPYTER_PASSWORD: ${JUPYTER_PASSWORD:-jupyter}
     volumes:
       - ./notebooks:/home/jovyan/work
-      - ./data:/home/jovyan/data
+      - ../data:/home/jovyan/data
 
 volumes:
   garage-meta:
   garage-data:
   postgres-data:
+  dw-data:
   airflow-logs:

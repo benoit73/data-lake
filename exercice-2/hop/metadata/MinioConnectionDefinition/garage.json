@@ -1,0 +1,12 @@
+{
+  "name": "garage",
+  "description": "Data lake S3 (Garage). Utilisable dans les chemins de fichiers : garage://bucket/fichier",
+  "endPointHostname": "garage",
+  "endPointPort": "3900",
+  "endPointSecure": false,
+  "accessKey": "${S3_ACCESS_KEY_ID}",
+  "secretKey": "${S3_SECRET_ACCESS_KEY}",
+  "region": "${S3_REGION}",
+  "partSize": "5242880",
+  "virtualPath": ""
+}

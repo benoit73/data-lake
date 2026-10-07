@@ -1,0 +1,12 @@
+#!/bin/bash
+# Lance un pipeline (.hpl) ou un workflow (.hwf) du projet Hop de l'exercice 2, monté dans /opt/hop-projet.
+# Usage : hop-dw nettoyer_annonces.hpl
+set -euo pipefail
+cd /opt/hop
+
+# Les connexions Hop (metadata) lisent ces valeurs comme variables : ${S3_ACCESS_KEY_ID}, ${DW_PASSWORD}...
+export HOP_OPTIONS="-Xmx${HOP_XMX:-3g} \
+  -DS3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID} -DS3_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY} -DS3_REGION=${S3_REGION} \
+  -DDW_DB=${DW_DB} -DDW_USER=${DW_USER} -DDW_PASSWORD=${DW_PASSWORD}"
+
+exec ./hop-run.sh --project=dw --runconfig=local --level=Basic --file="/opt/hop-projet/$1"
